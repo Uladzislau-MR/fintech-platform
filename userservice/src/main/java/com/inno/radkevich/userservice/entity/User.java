@@ -9,17 +9,17 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @Setter
-@Table(name = "users")
+@Table(name = "users", indexes = {@Index(name = "idx_email", columnList = "email")})
 public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false, unique = true)
     private Long id;
-    @Column(nullable = false)
+    @Column(nullable = false, name = "name")
     private String name;
     @Column(nullable = false)
     private String surname;
-    @Column(nullable = false)
+    @Column(nullable = false, name = "birth_date")
     private LocalDate birthDate;
     @Column(nullable = false)
     private String email;
