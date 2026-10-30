@@ -3,6 +3,8 @@ package com.inno.radkevich.userservice.spec;
 import com.inno.radkevich.userservice.entity.User;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
+
 public class UserSpecification {
     private UserSpecification() {
     }
@@ -23,5 +25,18 @@ public class UserSpecification {
         return (root, query, cb) ->
                 (email == null || email.isBlank()) ? null :
                         cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%");
+    }
+
+    public static Specification<User> hasBirthDate(LocalDate birthDate) {
+        return (root, query, cb) ->
+                (birthDate == null) ? null :
+                        cb.equal(root.get("birthDate"), birthDate);
+    }
+
+
+    public static Specification<User> isActive(Boolean status) {
+        return (root, query, cb) ->
+                (status == null) ? null :
+                        cb.equal(root.get("active"), status);
     }
 }
