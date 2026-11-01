@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 public record UserDto(
@@ -20,5 +21,6 @@ public record UserDto(
         @Email
         String email,
         Boolean active
-) {
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
 }

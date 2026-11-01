@@ -1,0 +1,183 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2-insert-legendary-users
+      author: radkevich
+      changes:
+        # 1. Брэд Питт
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 1 }
+              - column: { name: name, value: "Brad" }
+              - column: { name: surname, value: "Pitt" }
+              - column: { name: email, value: "brad.pitt@example.com" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 101 }
+              - column: { name: user_id, valueNumeric: 1 }
+              - column: { name: number, value: "4000123456789011" }
+              - column: { name: holder, value: "BRAD PITT" }
+              - column: { name: expiration_date, value: "12/28" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 102 }
+              - column: { name: user_id, valueNumeric: 1 }
+              - column: { name: number, value: "4000123456789012" }
+              - column: { name: holder, value: "BRAD PITT" }
+              - column: { name: expiration_date, value: "10/27" }
+              - column: { name: active, valueBoolean: true }
+
+        # 2. Том Круз
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 2 }
+              - column: { name: name, value: "Tom" }
+              - column: { name: surname, value: "Cruise" }
+              - column: { name: email, value: "tom.cruise@example.com" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 201 }
+              - column: { name: user_id, valueNumeric: 2 }
+              - column: { name: number, value: "4000234567890121" }
+              - column: { name: holder, value: "TOM CRUISE" }
+              - column: { name: expiration_date, value: "05/29" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 202 }
+              - column: { name: user_id, valueNumeric: 2 }
+              - column: { name: number, value: "4000234567890122" }
+              - column: { name: holder, value: "TOM CRUISE" }
+              - column: { name: expiration_date, value: "06/30" }
+              - column: { name: active, valueBoolean: true }
+
+        # 3. Эдвард Нортон
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 3 }
+              - column: { name: name, value: "Edward" }
+              - column: { name: surname, value: "Norton" }
+              - column: { name: email, value: "edward.norton@example.com" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 301 }
+              - column: { name: user_id, valueNumeric: 3 }
+              - column: { name: number, value: "4000345678901231" }
+              - column: { name: holder, value: "EDWARD NORTON" }
+              - column: { name: expiration_date, value: "01/26" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 302 }
+              - column: { name: user_id, valueNumeric: 3 }
+              - column: { name: number, value: "4000345678901232" }
+              - column: { name: holder, value: "EDWARD NORTON" }
+              - column: { name: expiration_date, value: "02/27" }
+              - column: { name: active, valueBoolean: true }
+
+        # 4. Юрий Никулин
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 4 }
+              - column: { name: name, value: "Yuri" }
+              - column: { name: surname, value: "Nikulin" }
+              - column: { name: email, value: "yuri.nikulin@example.com" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 401 }
+              - column: { name: user_id, valueNumeric: 4 }
+              - column: { name: number, value: "4000456789012341" }
+              - column: { name: holder, value: "YURI NIKULIN" }
+              - column: { name: expiration_date, value: "11/25" }
+              - column: { name: active, valueBoolean: true }
+
+        # 5. Михаил Горшенев
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 5 }
+              - column: { name: name, value: "Mikhail" }
+              - column: { name: surname, value: "Gorsheniov" }
+              - column: { name: email, value: "gorshok@korolishut.ru" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 501 }
+              - column: { name: user_id, valueNumeric: 5 }
+              - column: { name: number, value: "4000567890123451" }
+              - column: { name: holder, value: "MIKHAIL GORSHENIOV" }
+              - column: { name: expiration_date, value: "07/28" }
+              - column: { name: active, valueBoolean: true }
+
+        # 6. Кейт Флинт
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 6 }
+              - column: { name: name, value: "Keith" }
+              - column: { name: surname, value: "Flint" }
+              - column: { name: email, value: "keith.flint@prodigy.uk" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 601 }
+              - column: { name: user_id, valueNumeric: 6 }
+              - column: { name: number, value: "4000678901234561" }
+              - column: { name: holder, value: "KEITH FLINT" }
+              - column: { name: expiration_date, value: "03/29" }
+              - column: { name: active, valueBoolean: true }
+
+        # 7. Серж Танкян
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 7 }
+              - column: { name: name, value: "Serj" }
+              - column: { name: surname, value: "Tankian" }
+              - column: { name: email, value: "serj.tankian@soad.com" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 701 }
+              - column: { name: user_id, valueNumeric: 7 }
+              - column: { name: number, value: "4000789012345671" }
+              - column: { name: holder, value: "SERJ TANKIAN" }
+              - column: { name: expiration_date, value: "04/30" }
+              - column: { name: active, valueBoolean: true }
+
+        # 8. Виктор Цой
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueNumeric: 8 }
+              - column: { name: name, value: "Viktor" }
+              - column: { name: surname, value: "Tsoi" }
+              - column: { name: email, value: "viktor.tsoi@kino.su" }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: payment_cards
+            columns:
+              - column: { name: id, valueNumeric: 801 }
+              - column: { name: user_id, valueNumeric: 8 }
+              - column: { name: number, value: "4000890123456781" }
+              - column: { name: holder, value: "VIKTOR TSOI" }
+              - column: { name: expiration_date, value: "08/29" }
+              - column: { name: active, valueBoolean: true }
