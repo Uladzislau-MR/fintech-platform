@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  redis-users:
+    image: redis:alpine
+    container_name: redis-users-service
+    ports:
+      - "6379:6379"
+    restart: always
