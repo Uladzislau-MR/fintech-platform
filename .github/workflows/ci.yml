@@ -36,6 +36,8 @@ jobs:
           SPRING_DATASOURCE_USERNAME: sa
           SPRING_DATASOURCE_PASSWORD: ""
           SPRING_LIQUIBASE_ENABLED: "true"
+          SPRING_DATA_REDIS_HOST: localhost
+          SPRING_DATA_REDIS_PORT: "6379"
         run: |
           ./gradlew check --no-daemon --stacktrace || {
             head -n 80 build/test-results/test/TEST-*.xml
