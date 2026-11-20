@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -23,15 +23,20 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: gradle
+          cache-dependency-path: userservice/gradle/wrapper/gradle-wrapper.properties
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+        working-directory: userservice
 
       - name: Run unit and integration tests
         run: ./gradlew check --no-daemon
+        working-directory: userservice
 
       - name: Build bootJar
         run: ./gradlew bootJar -x test --no-daemon
+        working-directory: userservice
 
       - name: Build Docker image
         run: docker build -t userservice:ci -f Dockerfile .
+        working-directory: userservice
