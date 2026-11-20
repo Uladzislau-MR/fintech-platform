@@ -11,6 +11,8 @@ import java.util.List;
 public interface PaymentCardRepository extends JpaRepository<PaymentCard,Long>, JpaSpecificationExecutor<PaymentCard> {
 
     PaymentCard findPaymentCardByNumber(String number);
+    long countByUserIdAndActiveTrue(Long userId);
+
 
     @Query("SELECT p from PaymentCard p WHERE p.holder =:holder")
     List<PaymentCard> findPaymentCardByHolder(@Param("holder") String holder);
