@@ -1,6 +1,7 @@
 package com.inno.radkevich.userservice.service;
 
 import com.inno.radkevich.userservice.dto.UserDto;
+import com.inno.radkevich.userservice.entity.PaymentCard;
 import com.inno.radkevich.userservice.entity.User;
 import com.inno.radkevich.userservice.exception.UserNotFoundException;
 import com.inno.radkevich.userservice.mapper.UserMapper;
@@ -23,6 +24,7 @@ public class UserService {
     final private UserRepository userRepository;
     final private UserMapper userMapper;
 
+
     public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
@@ -34,12 +36,14 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
-    @Cacheable(value = "users")
+
+    @Cacheable(value = "user-lists", key = "'findAll'")
     public List<UserDto> findAll() {
         return userRepository.findAll().stream().map(user -> userMapper.toDto(user)).toList();
     }
 
-    @Cacheable(value = "users", key = "#date")
+
+    @Cacheable(value = "user-lists", key = "#date")
     public List<UserDto> findByBirthDate(LocalDate date) {
         List<User> usersList = userRepository.findByBirthDate(date);
         return usersList.stream().map(user -> userMapper.toDto(user)).toList();
@@ -51,13 +55,18 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
-    @Cacheable(value = "users", key = "#active")
+
+    @Cacheable(value = "user-lists", key = "#active")
     public List<UserDto> findActiveUsers(Boolean active) {
         List<User> usersList = userRepository.findActiveUsers(active);
         return usersList.stream().map(user -> userMapper.toDto(user)).toList();
     }
 
-    @Cacheable(value = "users", key = "#name + '_'  + #surname + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+
+    @Cacheable(
+            value = "user-pages",
+            key = "#name + '_' + #surname + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()"
+    )
     public Page<UserDto> findByFilters(String name, String surname, Pageable pageable) {
         Specification<User> spec = Specification.where(UserSpecification.hasName(name))
                 .and(UserSpecification.hasSurname(surname));
@@ -65,8 +74,9 @@ public class UserService {
         return userPage.map(user -> userMapper.toDto(user));
     }
 
+
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
+    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto createUser(UserDto userDto) {
         User user = userMapper.toEntity(userDto);
         userRepository.save(user);
@@ -76,7 +86,7 @@ public class UserService {
 
     //Dirty Checking
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
+    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto updateUser(Long id, UserDto userDto) {
 
 
@@ -90,14 +100,14 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
+    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
         userRepository.delete(user);
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
+    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto activateUser(Long id) {
 
         User user = userRepository.findById(id)
@@ -108,7 +118,7 @@ public class UserService {
 
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
+    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto deactivateUser(Long id) {
 
         User user = userRepository.findById(id)
@@ -116,6 +126,8 @@ public class UserService {
         user.setActive(false);
         return userMapper.toDto(user);
     }
+
+
 
 
 }

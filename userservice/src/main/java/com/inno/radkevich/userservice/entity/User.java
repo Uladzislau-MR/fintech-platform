@@ -1,8 +1,5 @@
 package com.inno.radkevich.userservice.entity;
 
-import com.inno.radkevich.userservice.exception.CardNotFoundException;
-import com.inno.radkevich.userservice.exception.CardsLimitException;
-import com.inno.radkevich.userservice.exception.NoCardsException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,34 +38,6 @@ public class User extends BaseEntity {
     private List<PaymentCard> cards = new ArrayList<>();
 
     public User() {
-    }
-
-    public void addCard(PaymentCard paymentCard) {
-        if(cards.size()<5) {
-            paymentCard.setUser(this);
-            cards.add(paymentCard);
-        }else {
-            throw new  CardsLimitException("Maximum limit of 5 payment cards reached");
-        }
-    }
-
-    public void deleteCardFromUser(PaymentCard paymentCard) {
-
-        if (cards.isEmpty()) {
-            throw new NoCardsException("User does not have any payment card");
-        }
-
-        boolean removed = cards.removeIf(card -> {
-            if (card.getId().equals(paymentCard.getId())) {
-                card.setUser(null);
-                return true;
-            }
-            return false;
-        });
-
-        if (!removed) {
-            throw new CardNotFoundException("Payment card not found");
-        }
     }
 
 

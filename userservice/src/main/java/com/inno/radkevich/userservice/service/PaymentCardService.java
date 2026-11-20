@@ -3,6 +3,7 @@ package com.inno.radkevich.userservice.service;
 import com.inno.radkevich.userservice.dto.PaymentCardDto;
 import com.inno.radkevich.userservice.entity.PaymentCard;
 import com.inno.radkevich.userservice.entity.User;
+import com.inno.radkevich.userservice.exception.CardLimitExceededException;
 import com.inno.radkevich.userservice.exception.CardNotFoundException;
 import com.inno.radkevich.userservice.exception.UserNotFoundException;
 import com.inno.radkevich.userservice.mapper.PaymentCardMapper;
@@ -11,6 +12,7 @@ import com.inno.radkevich.userservice.repository.UserRepository;
 import com.inno.radkevich.userservice.spec.CardSpecification;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,21 +35,30 @@ public class PaymentCardService {
 
     @Transactional
     @CacheEvict(value = "paymentCards", allEntries = true)
-    public PaymentCardDto createPaymentCard(PaymentCardDto paymentCardDto, Long userId) {
-        PaymentCard paymentCard = paymentCardMapper.toEntity(paymentCardDto);
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
+    public PaymentCardDto createPaymentCard(Long userId, PaymentCardDto cardDto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (Boolean.TRUE.equals(cardDto.active())) {
+            long activeCount = paymentCardRepository.countByUserIdAndActiveTrue(userId);
+            if (activeCount >= 5) {
+                throw new CardLimitExceededException("Maximum limit of 5 active payment cards reached");
+            }
+        }
+
+        PaymentCard paymentCard = paymentCardMapper.toEntity(cardDto);
         paymentCard.setUser(user);
-        user.addCard(paymentCard);
-        userRepository.save(user);
-        return paymentCardMapper.toDto(paymentCard);
+
+        PaymentCard savedCard = paymentCardRepository.save(paymentCard);
+        return paymentCardMapper.toDto(savedCard);
     }
 
     @Cacheable(value = "paymentCards", key = "#id")
     public PaymentCardDto findPaymentCardById(Long id) {
-        PaymentCard paymentCard = paymentCardRepository.findById(id).orElseThrow(() -> new CardNotFoundException("card with" + id + "not found"));
+        PaymentCard paymentCard = paymentCardRepository.findById(id).orElseThrow(() -> new CardNotFoundException("card with " + id + " not found"));
         return paymentCardMapper.toDto(paymentCard);
     }
-
 
     @Cacheable(value = "paymentCards", key = "#name + '_' + #surname + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<PaymentCardDto> getAllPaymentCards(String name, String surname, Pageable pageable) {
@@ -66,35 +77,62 @@ public class PaymentCardService {
     @CacheEvict(value = "paymentCards", allEntries = true)
     public PaymentCardDto updatePaymentCard(Long id, PaymentCardDto paymentCardDto) {
         PaymentCard paymentCard = paymentCardMapper.toEntity(paymentCardDto);
-        PaymentCard updatedCard = paymentCardRepository.findById(id).orElseThrow(() -> new CardNotFoundException("card with" + id + "not found"));
-        updatedCard.setUser(paymentCard.getUser());
+        PaymentCard updatedCard = paymentCardRepository.findById(id)
+                .orElseThrow(() -> new CardNotFoundException("card with " + id + " not found"));
+
+        boolean wasActive = Boolean.TRUE.equals(updatedCard.getActive());
+        boolean willBeActive = Boolean.TRUE.equals(paymentCard.getActive());
+
+        if (!wasActive && willBeActive) {
+            long activeCount = paymentCardRepository.countByUserIdAndActiveTrue(updatedCard.getUser().getId());
+            if (activeCount >= 5) {
+                throw new CardLimitExceededException("Maximum limit of 5 active payment cards reached");
+            }
+        }
         updatedCard.setNumber(paymentCard.getNumber());
         updatedCard.setHolder(paymentCard.getHolder());
         updatedCard.setExpirationDate(paymentCard.getExpirationDate());
         updatedCard.setActive(paymentCard.getActive());
-        return paymentCardMapper.toDto(updatedCard);
+        PaymentCard savedCard = paymentCardRepository.save(updatedCard);
+        return paymentCardMapper.toDto(savedCard);
     }
+
+
+
 
     @Transactional
     @CacheEvict(value = "paymentCards", allEntries = true)
     public PaymentCardDto activatePaymentCard(Long id) {
-
         PaymentCard card = paymentCardRepository.findById(id)
-                .orElseThrow(() -> new CardNotFoundException("card with" + id + "not found"));
-        card.setActive(true);
-        return paymentCardMapper.toDto(card);
+                .orElseThrow(() -> new CardNotFoundException("card with " + id + " not found"));
 
+        long activeCount = paymentCardRepository.countByUserIdAndActiveTrue(card.getUser().getId());
+        if (activeCount >= 5) {
+            throw new CardLimitExceededException("Maximum limit of 5 active payment cards reached");
+        }
+        card.setActive(true);
+        PaymentCard savedCard = paymentCardRepository.save(card);
+        return paymentCardMapper.toDto(savedCard);
     }
 
     @Transactional
     @CacheEvict(value = "paymentCards", allEntries = true)
     public PaymentCardDto deactivatePaymentCard(Long id) {
-
         PaymentCard card = paymentCardRepository.findById(id)
-                .orElseThrow(() -> new CardNotFoundException("card with" + id + "not found"));
+                .orElseThrow(() -> new CardNotFoundException("card with " + id + " not found"));
         card.setActive(false);
-        return paymentCardMapper.toDto(card);
-
+        PaymentCard savedCard = paymentCardRepository.save(card);
+        return paymentCardMapper.toDto(savedCard);
     }
 
+    @Transactional
+     @Caching(evict = {
+            @CacheEvict(value = "paymentCards", allEntries = true),
+            @CacheEvict(value = "users", allEntries = true)
+    })
+    public void deleteCard(Long cardId) {
+       PaymentCard paymentCard = paymentCardRepository.findById(cardId).orElseThrow(
+               ()-> new CardNotFoundException("card with " + cardId + " not found"));
+       paymentCardRepository.delete(paymentCard);
+    }
 }
