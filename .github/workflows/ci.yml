@@ -30,7 +30,11 @@ jobs:
         working-directory: userservice
 
       - name: Run unit and integration tests
-        run: ./gradlew check --no-daemon
+        run: |
+          ./gradlew check --no-daemon --stacktrace || {
+            head -n 80 build/test-results/test/TEST-*.xml
+            exit 1
+          }
         working-directory: userservice
 
       - name: Build bootJar
