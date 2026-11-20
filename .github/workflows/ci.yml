@@ -30,6 +30,12 @@ jobs:
         working-directory: userservice
 
       - name: Run unit and integration tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+          SPRING_DATASOURCE_USERNAME: sa
+          SPRING_DATASOURCE_PASSWORD: ""
+          SPRING_LIQUIBASE_ENABLED: "false"
         run: |
           ./gradlew check --no-daemon --stacktrace || {
             head -n 80 build/test-results/test/TEST-*.xml
