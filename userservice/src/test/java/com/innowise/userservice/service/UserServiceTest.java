@@ -63,7 +63,8 @@ public class UserServiceTest {
                 "Balaganov",
                 LocalDate.of(1902, 5, 15),
                 "shura.malochnyi@goldencalf.ru",
-                true
+                true,
+                List.of()
         );
     }
 

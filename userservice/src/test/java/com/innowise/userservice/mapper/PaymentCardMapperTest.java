@@ -6,10 +6,7 @@ import com.innowise.userservice.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
-
-
 import java.time.LocalDate;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -69,7 +66,6 @@ class PaymentCardMapperTest {
     @Test
     void paymentCardDtoToEntity() {
         PaymentCard entity = paymentCardMapper.toEntity(mockPaymentCardDto);
-
         assertNotNull(entity);
         assertEquals(mockPaymentCardDto.id(), entity.getId());
         assertEquals(mockPaymentCardDto.number(), entity.getNumber());

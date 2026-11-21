@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -39,7 +40,8 @@ class UserMapperTest {
                 "Balaganov",
                 LocalDate.of(1902, 5, 15),
                 "shura.malochnyi@goldencalf.ru",
-                true
+                true,
+                List.of()
         );
     }
 

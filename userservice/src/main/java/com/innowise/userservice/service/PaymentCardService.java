@@ -33,11 +33,11 @@ public class PaymentCardService {
         this.paymentCardMapper = paymentCardMapper;
     }
 
-
-
-
     @Transactional
-    @CacheEvict(value = "paymentCards", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "paymentCards", allEntries = true),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public PaymentCardDto createPaymentCard(Long userId, PaymentCardDto cardDto) {
 
         User user = userRepository.findById(userId)
@@ -70,14 +70,17 @@ public class PaymentCardService {
         return paymentCards.map(card -> paymentCardMapper.toDto(card));
     }
 
-    @Cacheable(value = "paymentCards", key ="'user_cards'+ #id")
+    @Cacheable(value = "paymentCards", key = "'user_cards_' + #id")
     public List<PaymentCardDto> findPaymentCardByUserId(Long id) {
         List<PaymentCard> paymentCardDtoList = paymentCardRepository.findByUserId(id);
         return paymentCardDtoList.stream().map(card -> paymentCardMapper.toDto(card)).toList();
     }
 
     @Transactional
-    @CacheEvict(value = "paymentCards", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "paymentCards", allEntries = true),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public PaymentCardDto updatePaymentCard(Long id, PaymentCardDto paymentCardDto) {
         PaymentCard paymentCard = paymentCardMapper.toEntity(paymentCardDto);
         PaymentCard updatedCard = paymentCardRepository.findById(id)
@@ -100,11 +103,11 @@ public class PaymentCardService {
         return paymentCardMapper.toDto(savedCard);
     }
 
-
-
-
     @Transactional
-    @CacheEvict(value = "paymentCards", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "paymentCards", allEntries = true),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public PaymentCardDto activatePaymentCard(Long id) {
         PaymentCard card = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new CardNotFoundException("card with " + id + " not found"));
@@ -119,7 +122,10 @@ public class PaymentCardService {
     }
 
     @Transactional
-    @CacheEvict(value = "paymentCards", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "paymentCards", allEntries = true),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     public PaymentCardDto deactivatePaymentCard(Long id) {
         PaymentCard card = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new CardNotFoundException("card with " + id + " not found"));
@@ -129,13 +135,13 @@ public class PaymentCardService {
     }
 
     @Transactional
-     @Caching(evict = {
+    @Caching(evict = {
             @CacheEvict(value = "paymentCards", allEntries = true),
             @CacheEvict(value = "users", allEntries = true)
     })
     public void deleteCard(Long cardId) {
-       PaymentCard paymentCard = paymentCardRepository.findById(cardId).orElseThrow(
-               ()-> new CardNotFoundException("card with " + cardId + " not found"));
-       paymentCardRepository.delete(paymentCard);
+        PaymentCard paymentCard = paymentCardRepository.findById(cardId).orElseThrow(
+                () -> new CardNotFoundException("card with " + cardId + " not found"));
+        paymentCardRepository.delete(paymentCard);
     }
 }

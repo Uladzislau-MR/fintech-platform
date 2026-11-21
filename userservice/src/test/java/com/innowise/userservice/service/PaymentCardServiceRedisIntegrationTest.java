@@ -20,6 +20,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,7 +67,9 @@ class PaymentCardServiceRedisIntegrationTest extends AbstractIntegrationTest {
                 "Balaganov",
                 LocalDate.of(1902, 5, 15),
                 "shura@goldencalf.ru",
-                true
+                true,
+                List.of()
+
         ));
 
         testCard = paymentCardService.createPaymentCard(testUser.id(), new PaymentCardDto(
@@ -87,11 +90,7 @@ class PaymentCardServiceRedisIntegrationTest extends AbstractIntegrationTest {
 
     }
 
-    @Test
-     void PaymentCardServiceRedisIntegrationTest() {
-        paymentCardService.findPaymentCardById(testCard.id());
-        paymentCardService.findPaymentCardByUserId(testCard.id());
-    }
+
 
     @Test
     void findCardByIdCacheTest() {
@@ -112,10 +111,8 @@ class PaymentCardServiceRedisIntegrationTest extends AbstractIntegrationTest {
     @Test
     void getAllCardsCacheTest() {
         Pageable pageable = PageRequest.of(0, 10);
-
         Page<PaymentCardDto> firstRead = paymentCardService.getAllPaymentCards("Shura", "Balaganov", pageable);
         Page<PaymentCardDto> secondRead = paymentCardService.getAllPaymentCards("Shura", "Balaganov", pageable);
-
         assertEquals(1, firstRead.getTotalElements());
         assertEquals(firstRead.getContent(), secondRead.getContent());
         verify(paymentCardRepository, times(1)).findAll(

@@ -9,7 +9,7 @@ import java.io.Serializable;
 public record PaymentCardDto(
         @Nullable
         Long id,
-        @NotNull
+        @Nullable
         Long userId,
         @NotBlank
         String number,
@@ -17,6 +17,7 @@ public record PaymentCardDto(
         String holder,
         @NotBlank
         String expirationDate,
+        @NotNull
         Boolean active
 ) implements Serializable {
     private static final long serialVersionUID = 1L;

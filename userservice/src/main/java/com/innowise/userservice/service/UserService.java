@@ -75,7 +75,7 @@ public class UserService {
     }
 
 
-    @Transactional
+    @Transactional(readOnly = true)
     @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto createUser(UserDto userDto) {
         User user = userMapper.toEntity(userDto);
@@ -85,7 +85,7 @@ public class UserService {
 
 
     //Dirty Checking
-    @Transactional
+    @Transactional(readOnly = true)
     @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto updateUser(Long id, UserDto userDto) {
 
@@ -99,7 +99,7 @@ public class UserService {
         return userMapper.toDto(updatedUser);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Caching(evict = {
             @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true),
             @CacheEvict(value = "paymentCards", allEntries = true)
@@ -109,7 +109,7 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
     public UserDto activateUser(Long id) {
 
@@ -120,7 +120,7 @@ public class UserService {
     }
 
 
-    @Transactional
+    @Transactional(readOnly = true)
     @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
 
     public UserDto deactivateUser(Long id) {

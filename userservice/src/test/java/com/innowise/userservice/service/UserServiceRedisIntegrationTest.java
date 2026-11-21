@@ -53,7 +53,9 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
                 "Balaganov",
                 LocalDate.of(1902, 5, 15),
                 "shura@goldencalf.ru",
-                true
+                true,
+                List.of()
+
         ));
     }
 
@@ -113,7 +115,8 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
                 "Balaganov",
                 testUser.birthDate(),
                 testUser.email(),
-                testUser.active()
+                testUser.active(),
+                List.of()
         );
         userService.updateUser(testUser.id(), updatedDto);
 
