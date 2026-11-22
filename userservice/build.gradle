@@ -2,15 +2,17 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'org.sonarqube' version '7.6.0.18749'
 }
 
-group = 'com'
+group = 'com.innowise'
 version = '0.0.1-SNAPSHOT'
 description = 'userservice'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -26,21 +28,98 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-liquibase'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'com.h2database:h2'
+
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-parameters']
+}
+
+tasks.named('compileJava') {
+    options.compilerArgs += ['-Amapstruct.unmappedTargetPolicy=ERROR']
+}
+
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+
+    def envFile = rootProject.file('.env')
+    if (envFile.exists()) {
+        envFile.readLines().each { line ->
+            def trimmed = line.trim()
+            if (trimmed && !trimmed.startsWith('#') && trimmed.contains('=')) {
+                def idx = trimmed.indexOf('=')
+                def key = trimmed.substring(0, idx).trim()
+                def value = trimmed.substring(idx + 1).trim()
+                if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.substring(1, value.length() - 1)
+                }
+                environment key, value
+            }
+        }
+    }
+}
+
+jacocoTestReport {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, exclude: [
+                '**/*MapperImpl*',
+                '**/UserServiceApplication*'
+        ])
+    }))
+}
+
+jacocoTestCoverageVerification {
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, include: ['**/service/**'])
+    }))
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+// ===== SonarCloud: анализ качества кода =====
+sonar {
+    properties {
+        property "sonar.projectKey", "Uladzislau-MR_fintech-platform"
+        property "sonar.organization", "uladzislau-mr"
+        // Отчёт покрытия JaCoCo (XML), который строится после тестов
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+    }
+}
+
+// Перед анализом Sonar обязательно должны выполниться тесты и построиться отчёт покрытия
+tasks.named('sonar') {
+    dependsOn tasks.named('jacocoTestReport')
 }
