@@ -6,6 +6,7 @@ import com.innowise.userservice.exception.UserNotFoundException;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
@@ -13,6 +14,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.LocalDate;
@@ -21,6 +24,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -43,7 +47,7 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
         cacheManager.getCacheNames().forEach(name -> {
             Cache cache = cacheManager.getCache(name);
             if (cache != null) {
-                cache.clear();
+                cache.invalidate();
             }
         });
         userRepository.deleteAll();
@@ -55,8 +59,16 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
                 "shura@goldencalf.ru",
                 true,
                 List.of()
-
         ));
+    }
+
+    @Test
+    void createUserReturnsFilledDtoWithGeneratedIdTest() {
+        assertNotNull(testUser.id());
+        assertEquals("Shura", testUser.name());
+        assertEquals("Balaganov", testUser.surname());
+        assertEquals("shura@goldencalf.ru", testUser.email());
+        assertEquals(true, testUser.active());
     }
 
     @Test
@@ -70,26 +82,6 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void findByEmailCacheTest() {
-        UserDto firstRead = userService.findByEmail(testUser.email());
-        UserDto secondRead = userService.findByEmail(testUser.email());
-
-        assertNotNull(firstRead);
-        assertEquals(firstRead, secondRead);
-        verify(userRepository, times(1)).findByEmail(testUser.email());
-    }
-
-    @Test
-    void findAllCacheTest() {
-        List<UserDto> firstRead = userService.findAll();
-        List<UserDto> secondRead = userService.findAll();
-
-        assertEquals(1, firstRead.size());
-        assertEquals(firstRead, secondRead);
-        verify(userRepository, times(1)).findAll();
-    }
-
-    @Test
     void findByFiltersCacheTest() {
         Pageable pageable = PageRequest.of(0, 10);
 
@@ -99,9 +91,21 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
         assertEquals(1, firstRead.getTotalElements());
         assertEquals(firstRead.getContent(), secondRead.getContent());
         verify(userRepository, times(1)).findAll(
-                org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<User>>any(),
-                org.mockito.ArgumentMatchers.eq(pageable)
+                ArgumentMatchers.<Specification<User>>any(),
+                eq(pageable)
         );
+    }
+
+    @Test
+    void findByFiltersCacheKeyIncludesSortTest() {
+        Pageable byName = PageRequest.of(0, 10, Sort.by("name"));
+        Pageable bySurname = PageRequest.of(0, 10, Sort.by("surname"));
+
+        userService.findByFilters(null, null, byName);
+        userService.findByFilters(null, null, bySurname);
+
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any(), eq(byName));
+        verify(userRepository, times(1)).findAll(ArgumentMatchers.<Specification<User>>any(), eq(bySurname));
     }
 
     @Test
@@ -122,7 +126,15 @@ class UserServiceRedisIntegrationTest extends AbstractIntegrationTest {
 
         UserDto afterUpdate = userService.findById(testUser.id());
         assertEquals("Alexander", afterUpdate.name());
-        verify(userRepository, times(3)).findById(testUser.id());
+    }
+
+    @Test
+    void updateStatusEvictCacheTest() {
+        assertEquals(true, userService.findById(testUser.id()).active());
+
+        userService.updateUserStatus(testUser.id(), false);
+
+        assertEquals(false, userService.findById(testUser.id()).active());
     }
 
     @Test

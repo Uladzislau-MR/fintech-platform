@@ -4,7 +4,8 @@ import com.innowise.userservice.entity.PaymentCard;
 import org.springframework.data.jpa.domain.Specification;
 
 public class CardSpecification {
-
+    private CardSpecification() {
+    }
 
     public static Specification<PaymentCard> hasName(String name) {
         return (root, query, cb) ->
@@ -16,6 +17,5 @@ public class CardSpecification {
         return (root, query, cb) ->
                 (surname == null || surname.isBlank()) ? null :
                         cb.like(cb.lower(root.get("user").get("surname")), "%" + surname.toLowerCase() + "%");
-
     }
 }

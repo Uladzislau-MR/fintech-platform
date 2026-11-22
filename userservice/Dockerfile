@@ -9,7 +9,6 @@ RUN chmod +x gradlew && ./gradlew dependencies --no-daemon || true
 COPY src src
 RUN ./gradlew bootJar -x test --no-daemon
 
-# --- Runtime stage ---
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
@@ -18,5 +17,5 @@ USER spring:spring
 
 COPY --from=builder /workspace/build/libs/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

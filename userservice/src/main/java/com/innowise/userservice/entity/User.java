@@ -1,6 +1,14 @@
 package com.innowise.userservice.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,28 +18,26 @@ import java.util.List;
 
 @Entity
 @Getter
-
-@Table(name = "users", indexes = {@Index(name = "idx_email", columnList = "email")})
+@Setter
+@Table(name = "users", indexes = {@Index(name = "idx_users_email", columnList = "email")})
 public class User extends BaseEntity {
     @Id
-    @Setter
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false, unique = true)
     private Long id;
+
     @Column(nullable = false, name = "name")
-    @Setter
     private String name;
-    @Column(nullable = false)
-    @Setter
+
+    @Column(nullable = false, name = "surname")
     private String surname;
+
     @Column(nullable = false, name = "birth_date")
-    @Setter
     private LocalDate birthDate;
-    @Setter
-    @Column(nullable = false)
+
+    @Column(nullable = false, name = "email", unique = true)
     private String email;
-    @Setter
-    @Column(nullable = false)
+
+    @Column(nullable = false, name = "active")
     private Boolean active;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -39,9 +45,6 @@ public class User extends BaseEntity {
 
     public User() {
     }
-
-
-
 
     public User(Long id, String name, String surname, LocalDate birthDate, String email, Boolean active) {
         this.id = id;
@@ -52,4 +55,3 @@ public class User extends BaseEntity {
         this.active = active;
     }
 }
-

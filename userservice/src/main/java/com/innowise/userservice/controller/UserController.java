@@ -1,6 +1,7 @@
 package com.innowise.userservice.controller;
 
 import com.innowise.userservice.dto.UserDto;
+import com.innowise.userservice.dto.UserStatusDto;
 import com.innowise.userservice.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -62,13 +63,11 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/activate")
-    public ResponseEntity<UserDto> activateUser(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.activateUser(id));
-    }
-
-    @PatchMapping("/{id}/deactivate")
-    public ResponseEntity<UserDto> deactivateUser(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.deactivateUser(id));
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<UserDto> updateUserStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UserStatusDto statusDto
+    ) {
+        return ResponseEntity.ok(userService.updateUserStatus(id, statusDto.active()));
     }
 }

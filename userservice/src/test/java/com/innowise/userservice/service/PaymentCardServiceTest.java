@@ -31,13 +31,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PaymentCardServiceTest {
+class PaymentCardServiceTest {
+
+    private static final LocalDate EXPIRATION = LocalDate.of(2030, 12, 31);
 
     @Mock
     private PaymentCardRepository paymentCardRepository;
@@ -76,7 +79,7 @@ public class PaymentCardServiceTest {
                 mockUser,
                 "4000123456789010",
                 "Shura Balaganov",
-                "12/28",
+                EXPIRATION,
                 true
         );
 
@@ -85,7 +88,7 @@ public class PaymentCardServiceTest {
                 userId,
                 "4000123456789010",
                 "Shura Balaganov",
-                "12/28",
+                EXPIRATION,
                 true
         );
     }
@@ -102,10 +105,43 @@ public class PaymentCardServiceTest {
 
         assertEquals(expectedDto, actual);
         assertEquals(mockUser, mockCard.getUser());
-        verify(userRepository).findById(userId);
-        verify(paymentCardRepository).countByUserIdAndActiveTrue(userId);
         verify(paymentCardRepository).save(mockCard);
         verify(paymentCardMapper).toDto(mockCard);
+    }
+
+    @Test
+    void createPaymentCardDefaultsActiveToTrueAndChecksLimitTest() {
+        PaymentCardDto withoutActive = new PaymentCardDto(
+                null, null, "4000123456789010", "Shura Balaganov", EXPIRATION, null);
+        PaymentCard entity = new PaymentCard(null, null, "4000123456789010", "Shura Balaganov", EXPIRATION, null);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(paymentCardRepository.countByUserIdAndActiveTrue(userId)).thenReturn(1L);
+        when(paymentCardMapper.toEntity(withoutActive)).thenReturn(entity);
+        when(paymentCardRepository.save(entity)).thenReturn(entity);
+        when(paymentCardMapper.toDto(entity)).thenReturn(expectedDto);
+
+        paymentCardService.createPaymentCard(userId, withoutActive);
+
+        assertTrue(entity.getActive());
+        verify(paymentCardRepository).countByUserIdAndActiveTrue(userId);
+    }
+
+    @Test
+    void createInactivePaymentCardSkipsLimitCheckTest() {
+        PaymentCardDto inactiveDto = new PaymentCardDto(
+                null, null, "4000123456789010", "Shura Balaganov", EXPIRATION, false);
+        PaymentCard entity = new PaymentCard(null, null, "4000123456789010", "Shura Balaganov", EXPIRATION, false);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(paymentCardMapper.toEntity(inactiveDto)).thenReturn(entity);
+        when(paymentCardRepository.save(entity)).thenReturn(entity);
+        when(paymentCardMapper.toDto(entity)).thenReturn(expectedDto);
+
+        paymentCardService.createPaymentCard(userId, inactiveDto);
+
+        assertFalse(entity.getActive());
+        verify(paymentCardRepository, never()).countByUserIdAndActiveTrue(anyLong());
     }
 
     @Test
@@ -113,7 +149,6 @@ public class PaymentCardServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> paymentCardService.createPaymentCard(userId, expectedDto));
-        verify(userRepository).findById(userId);
         verify(paymentCardRepository, never()).save(any(PaymentCard.class));
     }
 
@@ -123,7 +158,6 @@ public class PaymentCardServiceTest {
         when(paymentCardRepository.countByUserIdAndActiveTrue(userId)).thenReturn(5L);
 
         assertThrows(CardLimitExceededException.class, () -> paymentCardService.createPaymentCard(userId, expectedDto));
-        verify(paymentCardRepository).countByUserIdAndActiveTrue(userId);
         verify(paymentCardRepository, never()).save(any(PaymentCard.class));
     }
 
@@ -136,7 +170,6 @@ public class PaymentCardServiceTest {
 
         assertEquals(expectedDto, actual);
         verify(paymentCardRepository).findById(cardId);
-        verify(paymentCardMapper).toDto(mockCard);
     }
 
     @Test
@@ -144,7 +177,6 @@ public class PaymentCardServiceTest {
         when(paymentCardRepository.findById(cardId)).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.findPaymentCardById(cardId));
-        verify(paymentCardRepository).findById(cardId);
     }
 
     @Test
@@ -152,15 +184,14 @@ public class PaymentCardServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<PaymentCard> page = new PageImpl<>(List.of(mockCard), pageable, 1);
 
-        when(paymentCardRepository.findAll(ArgumentMatchers.<Specification<PaymentCard>>any(), eq(pageable))).thenReturn(page);
+        when(paymentCardRepository.findAll(ArgumentMatchers.<Specification<PaymentCard>>any(), eq(pageable)))
+                .thenReturn(page);
         when(paymentCardMapper.toDto(mockCard)).thenReturn(expectedDto);
 
         Page<PaymentCardDto> actual = paymentCardService.getAllPaymentCards("Shura", "Balaganov", pageable);
 
         assertEquals(1, actual.getTotalElements());
         assertEquals(expectedDto, actual.getContent().getFirst());
-        verify(paymentCardRepository).findAll(ArgumentMatchers.<Specification<PaymentCard>>any(), eq(pageable));
-        verify(paymentCardMapper).toDto(mockCard);
     }
 
     @Test
@@ -172,20 +203,13 @@ public class PaymentCardServiceTest {
 
         assertEquals(List.of(expectedDto), actual);
         verify(paymentCardRepository).findByUserId(userId);
-        verify(paymentCardMapper).toDto(mockCard);
     }
 
     @Test
     void updatePaymentCardTest() {
         mockCard.setActive(false);
         PaymentCard mappedCard = new PaymentCard(
-                cardId,
-                null,
-                "4000123456789099",
-                "Shura Balaganov",
-                "12/29",
-                true
-        );
+                null, null, "4000123456789099", "Shura B.", LocalDate.of(2031, 1, 31), true);
 
         when(paymentCardMapper.toEntity(expectedDto)).thenReturn(mappedCard);
         when(paymentCardRepository.findById(cardId)).thenReturn(Optional.of(mockCard));
@@ -196,23 +220,34 @@ public class PaymentCardServiceTest {
         PaymentCardDto actual = paymentCardService.updatePaymentCard(cardId, expectedDto);
 
         assertEquals(expectedDto, actual);
-        assertEquals(mockUser, mockCard.getUser());
+        assertEquals(mockUser, mockCard.getUser(), "owner must not change on update");
         assertEquals("4000123456789099", mockCard.getNumber());
+        assertEquals("Shura B.", mockCard.getHolder());
+        assertEquals(LocalDate.of(2031, 1, 31), mockCard.getExpirationDate());
         assertTrue(mockCard.getActive());
-        verify(paymentCardRepository).save(mockCard);
+    }
+
+    @Test
+    void updatePaymentCardKeepsActiveWhenNotProvidedTest() {
+        PaymentCard mappedCard = new PaymentCard(
+                null, null, "4000123456789099", "Shura B.", EXPIRATION, null);
+
+        when(paymentCardMapper.toEntity(expectedDto)).thenReturn(mappedCard);
+        when(paymentCardRepository.findById(cardId)).thenReturn(Optional.of(mockCard));
+        when(paymentCardRepository.save(mockCard)).thenReturn(mockCard);
+        when(paymentCardMapper.toDto(mockCard)).thenReturn(expectedDto);
+
+        paymentCardService.updatePaymentCard(cardId, expectedDto);
+
+        assertTrue(mockCard.getActive());
+        verify(paymentCardRepository, never()).countByUserIdAndActiveTrue(anyLong());
     }
 
     @Test
     void updatePaymentCardLimitExceededTest() {
         mockCard.setActive(false);
         PaymentCard mappedCard = new PaymentCard(
-                cardId,
-                null,
-                "4000123456789010",
-                "Shura Balaganov",
-                "12/28",
-                true
-        );
+                null, null, "4000123456789010", "Shura Balaganov", EXPIRATION, true);
 
         when(paymentCardMapper.toEntity(expectedDto)).thenReturn(mappedCard);
         when(paymentCardRepository.findById(cardId)).thenReturn(Optional.of(mockCard));
@@ -228,7 +263,6 @@ public class PaymentCardServiceTest {
         when(paymentCardRepository.findById(cardId)).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.updatePaymentCard(cardId, expectedDto));
-        verify(paymentCardRepository).findById(cardId);
     }
 
     @Test
@@ -236,14 +270,24 @@ public class PaymentCardServiceTest {
         mockCard.setActive(false);
         when(paymentCardRepository.findById(cardId)).thenReturn(Optional.of(mockCard));
         when(paymentCardRepository.countByUserIdAndActiveTrue(userId)).thenReturn(4L);
-        when(paymentCardRepository.save(mockCard)).thenReturn(mockCard);
+        when(paymentCardRepository.updateActiveById(cardId, true)).thenReturn(1);
         when(paymentCardMapper.toDto(mockCard)).thenReturn(expectedDto);
 
         PaymentCardDto actual = paymentCardService.activatePaymentCard(cardId);
 
         assertEquals(expectedDto, actual);
-        assertTrue(mockCard.getActive());
-        verify(paymentCardRepository).save(mockCard);
+        verify(paymentCardRepository).updateActiveById(cardId, true);
+    }
+
+    @Test
+    void activateAlreadyActiveCardSkipsLimitCheckTest() {
+        when(paymentCardRepository.findById(cardId)).thenReturn(Optional.of(mockCard));
+        when(paymentCardRepository.updateActiveById(cardId, true)).thenReturn(1);
+        when(paymentCardMapper.toDto(mockCard)).thenReturn(expectedDto);
+
+        paymentCardService.activatePaymentCard(cardId);
+
+        verify(paymentCardRepository, never()).countByUserIdAndActiveTrue(anyLong());
     }
 
     @Test
@@ -253,7 +297,7 @@ public class PaymentCardServiceTest {
         when(paymentCardRepository.countByUserIdAndActiveTrue(userId)).thenReturn(5L);
 
         assertThrows(CardLimitExceededException.class, () -> paymentCardService.activatePaymentCard(cardId));
-        verify(paymentCardRepository, never()).save(any(PaymentCard.class));
+        verify(paymentCardRepository, never()).updateActiveById(anyLong(), ArgumentMatchers.anyBoolean());
     }
 
     @Test
@@ -265,23 +309,22 @@ public class PaymentCardServiceTest {
 
     @Test
     void deactivatePaymentCardTest() {
-        mockCard.setActive(true);
+        when(paymentCardRepository.updateActiveById(cardId, false)).thenReturn(1);
         when(paymentCardRepository.findById(cardId)).thenReturn(Optional.of(mockCard));
-        when(paymentCardRepository.save(mockCard)).thenReturn(mockCard);
         when(paymentCardMapper.toDto(mockCard)).thenReturn(expectedDto);
 
         PaymentCardDto actual = paymentCardService.deactivatePaymentCard(cardId);
 
         assertEquals(expectedDto, actual);
-        assertFalse(mockCard.getActive());
-        verify(paymentCardRepository).save(mockCard);
+        verify(paymentCardRepository).updateActiveById(cardId, false);
     }
 
     @Test
     void deactivatePaymentCardNotFoundTest() {
-        when(paymentCardRepository.findById(cardId)).thenReturn(Optional.empty());
+        when(paymentCardRepository.updateActiveById(cardId, false)).thenReturn(0);
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deactivatePaymentCard(cardId));
+        verify(paymentCardRepository, never()).findById(cardId);
     }
 
     @Test
@@ -290,7 +333,6 @@ public class PaymentCardServiceTest {
 
         paymentCardService.deleteCard(cardId);
 
-        verify(paymentCardRepository).findById(cardId);
         verify(paymentCardRepository).delete(mockCard);
     }
 

@@ -1,0 +1,24 @@
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Build output
+build/
+out/
+target/
+.gradle/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Stray local files
+*.rar
+files.txt

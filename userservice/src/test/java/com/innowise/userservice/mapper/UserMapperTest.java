@@ -1,20 +1,20 @@
 package com.innowise.userservice.mapper;
 
-
 import com.innowise.userservice.dto.UserDto;
 import com.innowise.userservice.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserMapperTest {
-
 
     private UserMapper userMapper;
 
@@ -22,7 +22,6 @@ class UserMapperTest {
     private UserDto mockUserDto;
 
     @BeforeEach
-
     void setUp() {
         userMapper = Mappers.getMapper(UserMapper.class);
         mockUser = new User(
@@ -56,6 +55,7 @@ class UserMapperTest {
         assertEquals(mockUser.getBirthDate(), dto.birthDate());
         assertEquals(mockUser.getEmail(), dto.email());
         assertEquals(mockUser.getActive(), dto.active());
+        assertTrue(dto.cards().isEmpty());
     }
 
     @Test
@@ -63,7 +63,7 @@ class UserMapperTest {
         User entity = userMapper.toEntity(mockUserDto);
 
         assertNotNull(entity);
-        assertEquals(mockUserDto.id(), entity.getId());
+        assertNull(entity.getId(), "id must be ignored on create");
         assertEquals(mockUserDto.name(), entity.getName());
         assertEquals(mockUserDto.surname(), entity.getSurname());
         assertEquals(mockUserDto.birthDate(), entity.getBirthDate());

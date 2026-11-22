@@ -6,13 +6,16 @@ import com.innowise.userservice.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+
 import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PaymentCardMapperTest {
 
+    private static final LocalDate EXPIRATION = LocalDate.of(2030, 12, 31);
 
     private PaymentCardMapper paymentCardMapper;
 
@@ -36,7 +39,7 @@ class PaymentCardMapperTest {
                 mockUser,
                 "4000123456789010",
                 "Shura Balaganov",
-                "12/28",
+                EXPIRATION,
                 true
         );
 
@@ -45,7 +48,7 @@ class PaymentCardMapperTest {
                 1L,
                 "4000123456789010",
                 "Shura Balaganov",
-                "12/28",
+                EXPIRATION,
                 true
         );
     }
@@ -66,12 +69,13 @@ class PaymentCardMapperTest {
     @Test
     void paymentCardDtoToEntity() {
         PaymentCard entity = paymentCardMapper.toEntity(mockPaymentCardDto);
+
         assertNotNull(entity);
-        assertEquals(mockPaymentCardDto.id(), entity.getId());
+        assertNull(entity.getId(), "id must be ignored on create");
+        assertNull(entity.getUser(), "owner is set by the service, not by the mapper");
         assertEquals(mockPaymentCardDto.number(), entity.getNumber());
         assertEquals(mockPaymentCardDto.holder(), entity.getHolder());
         assertEquals(mockPaymentCardDto.expirationDate(), entity.getExpirationDate());
         assertEquals(mockPaymentCardDto.active(), entity.getActive());
-
     }
 }

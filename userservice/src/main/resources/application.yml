@@ -2,24 +2,15 @@ server:
   port: 8081
 
 spring:
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-
+  profiles:
+    default: local
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
-
   jpa:
-    show-sql: true
     hibernate:
       ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
 
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+cache:
+  redis:
+    time-to-live: 10m

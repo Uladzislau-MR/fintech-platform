@@ -3,8 +3,6 @@ package com.innowise.userservice.controller;
 import com.innowise.userservice.dto.PaymentCardDto;
 import com.innowise.userservice.service.PaymentCardService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,46 +36,37 @@ public class PaymentCardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping("/cards/{id}")
-    public ResponseEntity<PaymentCardDto> findPaymentCardById(@PathVariable Long id) {
-        return ResponseEntity.ok(paymentCardService.findPaymentCardById(id));
-    }
-
-    @GetMapping("/cards")
-    public ResponseEntity<Page<PaymentCardDto>> getAllPaymentCards(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String surname,
-            Pageable pageable
-    ) {
-        return ResponseEntity.ok(paymentCardService.getAllPaymentCards(name, surname, pageable));
-    }
-
     @GetMapping("/users/{userId}/cards")
-    public ResponseEntity<List<PaymentCardDto>> findPaymentCardByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<PaymentCardDto>> findPaymentCardsByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(paymentCardService.findPaymentCardByUserId(userId));
     }
 
-    @PutMapping("/cards/{id}")
+    @GetMapping("/cards/{cardId}")
+    public ResponseEntity<PaymentCardDto> findPaymentCardById(@PathVariable Long cardId) {
+        return ResponseEntity.ok(paymentCardService.findPaymentCardById(cardId));
+    }
+
+    @PutMapping("/cards/{cardId}")
     public ResponseEntity<PaymentCardDto> updatePaymentCard(
-            @PathVariable Long id,
+            @PathVariable Long cardId,
             @Valid @RequestBody PaymentCardDto paymentCardDto
     ) {
-        return ResponseEntity.ok(paymentCardService.updatePaymentCard(id, paymentCardDto));
+        return ResponseEntity.ok(paymentCardService.updatePaymentCard(cardId, paymentCardDto));
     }
 
-    @PatchMapping("/cards/{id}/activate")
-    public ResponseEntity<PaymentCardDto> activatePaymentCard(@PathVariable Long id) {
-        return ResponseEntity.ok(paymentCardService.activatePaymentCard(id));
+    @PatchMapping("/cards/{cardId}/activate")
+    public ResponseEntity<PaymentCardDto> activatePaymentCard(@PathVariable Long cardId) {
+        return ResponseEntity.ok(paymentCardService.activatePaymentCard(cardId));
     }
 
-    @PatchMapping("/cards/{id}/deactivate")
-    public ResponseEntity<PaymentCardDto> deactivatePaymentCard(@PathVariable Long id) {
-        return ResponseEntity.ok(paymentCardService.deactivatePaymentCard(id));
+    @PatchMapping("/cards/{cardId}/deactivate")
+    public ResponseEntity<PaymentCardDto> deactivatePaymentCard(@PathVariable Long cardId) {
+        return ResponseEntity.ok(paymentCardService.deactivatePaymentCard(cardId));
     }
 
-    @DeleteMapping("/cards/{id}")
-    public ResponseEntity<Void> deletePaymentCard(@PathVariable Long id) {
-        paymentCardService.deleteCard(id);
+    @DeleteMapping("/cards/{cardId}")
+    public ResponseEntity<Void> deletePaymentCard(@PathVariable Long cardId) {
+        paymentCardService.deleteCard(cardId);
         return ResponseEntity.noContent().build();
     }
 }

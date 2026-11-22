@@ -2,12 +2,9 @@
 
 on:
   push:
-    branches:
-      - feat/docker-and-ci
   pull_request:
     branches:
-      - main
-      - develop
+      - master
 
 jobs:
   build-and-test:
@@ -29,24 +26,8 @@ jobs:
         run: chmod +x gradlew
         working-directory: userservice
 
-      - name: Run unit and integration tests
-        env:
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
-          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-          SPRING_DATASOURCE_USERNAME: sa
-          SPRING_DATASOURCE_PASSWORD: ""
-          SPRING_LIQUIBASE_ENABLED: "true"
-          SPRING_DATA_REDIS_HOST: localhost
-          SPRING_DATA_REDIS_PORT: "6379"
-        run: |
-          ./gradlew check --no-daemon --stacktrace || {
-            head -n 80 build/test-results/test/TEST-*.xml
-            exit 1
-          }
-        working-directory: userservice
-
-      - name: Build bootJar
-        run: ./gradlew bootJar -x test --no-daemon
+      - name: Build and run all tests
+        run: ./gradlew build --no-daemon
         working-directory: userservice
 
       - name: Build Docker image

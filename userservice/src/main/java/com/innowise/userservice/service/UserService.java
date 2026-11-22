@@ -1,137 +1,94 @@
 package com.innowise.userservice.service;
 
+import com.innowise.userservice.config.EvictAllCaches;
 import com.innowise.userservice.dto.UserDto;
 import com.innowise.userservice.entity.User;
 import com.innowise.userservice.exception.UserNotFoundException;
 import com.innowise.userservice.mapper.UserMapper;
 import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.spec.UserSpecification;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
-
+import static com.innowise.userservice.config.CacheNames.USERS;
+import static com.innowise.userservice.config.CacheNames.USER_PAGES;
 
 @Service
 public class UserService {
-    final private UserRepository userRepository;
-    final private UserMapper userMapper;
 
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
 
-    @Cacheable(value = "users", key = "#id")
+    @Transactional(readOnly = true)
+    @Cacheable(value = USERS, key = "#id")
     public UserDto findById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with " + id + " not found"));
         return userMapper.toDto(user);
     }
 
-
-    @Cacheable(value = "user-lists", key = "'findAll'")
-    public List<UserDto> findAll() {
-        return userRepository.findAll().stream().map(user -> userMapper.toDto(user)).toList();
-    }
-
-
-    @Cacheable(value = "user-lists", key = "#date")
-    public List<UserDto> findByBirthDate(LocalDate date) {
-        List<User> usersList = userRepository.findByBirthDate(date);
-        return usersList.stream().map(user -> userMapper.toDto(user)).toList();
-    }
-
-    @Cacheable(value = "users", key = "#email")
-    public UserDto findByEmail(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found"));
-        return userMapper.toDto(user);
-    }
-
-
-    @Cacheable(value = "user-lists", key = "#active")
-    public List<UserDto> findActiveUsers(Boolean active) {
-        List<User> usersList = userRepository.findActiveUsers(active);
-        return usersList.stream().map(user -> userMapper.toDto(user)).toList();
-    }
-
-
+    @Transactional(readOnly = true)
     @Cacheable(
-            value = "user-pages",
+            value = USER_PAGES,
             key = "#name + '_' + #surname + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()"
     )
     public Page<UserDto> findByFilters(String name, String surname, Pageable pageable) {
         Specification<User> spec = Specification.where(UserSpecification.hasName(name))
                 .and(UserSpecification.hasSurname(surname));
-        Page<User> userPage = userRepository.findAll(spec, pageable);
-        return userPage.map(user -> userMapper.toDto(user));
+        return userRepository.findAll(spec, pageable).map(userMapper::toDto);
     }
 
-
-    @Transactional(readOnly = true)
-    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
+    @Transactional
+    @EvictAllCaches
     public UserDto createUser(UserDto userDto) {
         User user = userMapper.toEntity(userDto);
-        userRepository.save(user);
-        return userMapper.toDto(user);
+        if (user.getActive() == null) {
+            user.setActive(true);
+        }
+        User savedUser = userRepository.save(user);
+        return userMapper.toDto(savedUser);
     }
 
-
-    //Dirty Checking
-    @Transactional(readOnly = true)
-    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
+    @Transactional
+    @EvictAllCaches
     public UserDto updateUser(Long id, UserDto userDto) {
-
-
-        User updatedUser = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User updatedUser = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with " + id + " not found"));
         updatedUser.setName(userDto.name());
         updatedUser.setSurname(userDto.surname());
         updatedUser.setBirthDate(userDto.birthDate());
         updatedUser.setEmail(userDto.email());
-        updatedUser.setActive(userDto.active());
+        if (userDto.active() != null) {
+            updatedUser.setActive(userDto.active());
+        }
         return userMapper.toDto(updatedUser);
     }
 
-    @Transactional(readOnly = true)
-    @Caching(evict = {
-            @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true),
-            @CacheEvict(value = "paymentCards", allEntries = true)
-    })
+    @Transactional
+    @EvictAllCaches
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with " + id + " not found"));
         userRepository.delete(user);
     }
 
-    @Transactional(readOnly = true)
-    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
-    public UserDto activateUser(Long id) {
-
+    @Transactional
+    @EvictAllCaches
+    public UserDto updateUserStatus(Long id, boolean active) {
+        if (userRepository.updateActiveById(id, active) == 0) {
+            throw new UserNotFoundException("User with " + id + " not found");
+        }
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User with" + id + "not found"));
-        user.setActive(true);
+                .orElseThrow(() -> new UserNotFoundException("User with " + id + " not found"));
         return userMapper.toDto(user);
     }
-
-
-    @Transactional(readOnly = true)
-    @CacheEvict(value = {"users", "user-lists", "user-pages"}, allEntries = true)
-
-    public UserDto deactivateUser(Long id) {
-
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User with" + id + "not found"));
-        user.setActive(false);
-        return userMapper.toDto(user);
-    }
-
-
-
-
 }
