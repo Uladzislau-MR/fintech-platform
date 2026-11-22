@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # полная история git нужна Sonar для корректного анализа
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -29,6 +31,13 @@ jobs:
       - name: Build and run all tests
         run: ./gradlew build --no-daemon
         working-directory: userservice
+
+      - name: Analyze with SonarCloud
+        run: ./gradlew sonar --no-daemon
+        working-directory: userservice
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
         run: docker build -t userservice:ci -f Dockerfile .
